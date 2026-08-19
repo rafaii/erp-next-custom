@@ -1,0 +1,3 @@
+[submodule "apps/real_estate_os"]
+	path = apps/real_estate_os
+	url = https://github.com/rafaii/real-estate.git

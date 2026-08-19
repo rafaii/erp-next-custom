@@ -1,0 +1,25 @@
+# ── Bench internals (upstream/untracked — never commit) ──────────────
+apps/frappe/
+apps/erpnext/
+sites/
+env/
+config/
+logs/
+patches.txt
+Procfile
+
+# ── Secrets ───────────────────────────────────────────────────────────
+.env
+.env.*
+*.pem
+
+# ── Caches / tooling ──────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+node_modules/
+.codegraph
+.omo/
+.DS_Store
