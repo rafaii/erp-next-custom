@@ -4,19 +4,35 @@ You are helping me design and develop a Real Estate Arbitrage Saas platform. I w
 
 ## Repo & Environment:
 
-### Main Repo - DO NOT COMMIT or PUSH THIS REPO
+### Bench root / meta repo — vault + submodule pointers ONLY
 
-- **Main canonical repo (GIT)**: `~/Development/erpnext`
+- **Path**: `~/Development/erpnext` (also the Frappe Bench install root)
+- **GitHub remote**: `https://github.com/rafaii/erp-next-custom`
+- This repo IS committed and pushed, but only for two things:
+  1. `vault/` docs (architecture, implementation plans, ADRs).
+  2. Submodule pointers (in `.gitmodules`) to each app repo below — a submodule
+     entry is just a URL + one commit SHA, not the app's actual code.
+  - Cloning it with `git clone --recurse-submodules` restores the vault and
+    every app repo at its last-known commit in one shot.
+- Everything else in this directory is bench internals — `apps/frappe`,
+  `apps/erpnext`, `sites/`, `env/`, `config/`, `logs/` — upstream/untracked,
+  gitignored, never commit them.
+- Never `git init` the bench root a second time; it already has a `.git` for
+  the meta repo above.
 
-### Custom App Repo - ONLY USE THIS REPO
+### Custom app repos — where actual code changes go
 
-- **Custom app canonical repo (GIT)**: `~/Development/erpnext/apps/real_estate_os`
-  - It is the custom Frappe app.
-  - `frappe`/`erpnext` apps and the bench root are upstream/untracked — never commit them.
-- **Bench root (a different git)**: `~/Development/erpnext`
-  - Frappe Bench install: `apps/frappe`, `apps/erpnext`, `sites/`, `env/`, `config/`.
-  - Bench root has NO `.git`; do NOT `git init` it.
-- **GitHub remote**: `https://github.com/rafaii/real-estate.git`
+Each app is its own independent git repo/remote, wired into the meta repo above
+as a submodule so it clones alongside the vault, but it pushes/pulls on its own:
+
+| App | Path | GitHub remote |
+|---|---|---|
+| Real Estate OS (core Frappe app) | `apps/real_estate_os` | `https://github.com/rafaii/real-estate.git` |
+| Accounts Portal | `apps/accounts_portal` | `https://github.com/rafaii/accounts-portal.git` |
+| E-Sign | `apps/inbuilt_esign` | `https://github.com/rafaii/inbuilt-esign.git` |
+| Email System | `apps/email_system` | `https://github.com/rafaii/email-system.git` |
+| Platform Console | `apps/platform_console` | `https://github.com/rafaii/platform-console.git` |
+
 - **Development Environment**: Ubuntu with ERPNext v15 installed at `~/Development/erpnext`
 
 You may change code + project files in the paths above.
@@ -59,13 +75,15 @@ For any task, create a short-lived branch:
 
 ## 3 Worktrees are required
 
-Never share a working directory with another task branch. For each task, create a dedicated git worktree inside the relevant repository:
+Never share a working directory with another task branch. For each task, create a dedicated git worktree inside the relevant app repo (`apps/real_estate_os`, `apps/accounts_portal`, `apps/inbuilt_esign`, `apps/email_system`, or `apps/platform_console` — never the bench-root meta repo):
 
 ```bash
-cd ~/Development/erpnext/apps/real_estate_os
+cd ~/Development/erpnext/apps/<app-name>
 git fetch origin
 git worktree add ./wt-<agent-name>-<task-slug> -b agent/<agent-name>/<task-slug> origin/main
 ```
+
+Once a task branch is merged, remove its worktree (`git worktree remove ./wt-<agent-name>-<task-slug>`) instead of leaving it on disk — stale worktrees accumulate and show up as noise in the bench root's `git status`.
 
 ## 4 Merge policy & Manual-trigger conditions
 
@@ -82,8 +100,9 @@ Canonical vault path: `~/Development/erpnext/vault`
 
 The canonical vault is authoritative for architecture, implementation plans, module design, and ADRs. Code lives in the app repo; documentation lives in the canonical vault.
 
-The vault is LOCAL-ONLY (not part of the `real_estate_os` app repo). Only the
-custom app code is committed to GitHub, per the repo-structure ADR.
+The vault IS committed and pushed — but only to the bench-root meta repo
+(`https://github.com/rafaii/erp-next-custom`), never to an app repo. App repos
+carry only app code, per the repo-structure ADR.
 
 ## 1. Critical vault rule
 
