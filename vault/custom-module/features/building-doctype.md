@@ -1,9 +1,9 @@
 ---
-status: in-progress
+status: done
 owner: developer-1
 domain: custom-module
 created: 2026-08-16
-updated: 2026-08-17
+updated: 2026-08-27
 related_adr: []
 ---
 
@@ -34,13 +34,17 @@ linked cost center and one-to-many Units.
 
 - [x] Create Building DocType JSON + fields
 - [x] Add naming series `BLD-.#####`
-- [ ] Wire `after_insert` cost-center hook (Phase 3)
-- [x] Add role permissions (System Manager; Leasing Agent role in Phase 4)
+- [x] Wire cost-center hook (`ensure_building_cost_center`, delegated to
+      `cost-center-per-building.md` — done, verified live)
+- [x] Add role permissions (System Manager; Leasing Agent role still gap
+      G8, tracked separately in `IMPLEMENTATION-PLAN.md`, doesn't block
+      this DocType's own completion)
 
 ## Acceptance Criteria
 
-- [ ] Create a Building → auto cost center linked
-- [ ] Building list shows status; units linkable
+- [x] Create a Building → auto cost center linked (verified live
+      repeatedly this session, e.g. BLD-00320 → its own Cost Center on save)
+- [x] Building list shows status; units linkable
 
 ## Related
 

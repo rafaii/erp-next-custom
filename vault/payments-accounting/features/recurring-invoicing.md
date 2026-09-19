@@ -3,7 +3,7 @@ status: done
 owner: developer-1
 domain: payments-accounting
 created: 2026-08-16
-updated: 2026-08-16
+updated: 2026-08-27
 related_adr: ["0004-recurring-invoicing"]
 ---
 
@@ -47,7 +47,25 @@ sends due-date reminders.
 - [x] Daily job generates the next due invoice exactly once
 - [x] Reminder sent 3 days pre-due
 
+## 2026-08-27 fix: don't invoice a period before it's due
+
+"On signature, auto-generate... the first Sales Invoice" (above) never
+checked whether that first period had actually arrived — only the daily
+scheduler's `_generate_due_for_lease` gated on `due_date <= today`.
+Surfaced live: a lease signed 2026-08-27 for a 2026-09-01 start (first
+rent due 2026-09-10) was invoiced same-day, and since the invoice posts
+with `today()`, that September rent counted as August revenue on
+`get_accounts_data`'s posting-date-grouped chart — while the new
+due-date-grouped Cash Flow Projection (`cash-flow-forecast.md`) correctly
+placed it in September, producing a visible discrepancy between the two
+(Imran caught this by comparing them side by side). Not just a display
+bug: a tenant could be billed for next month's rent nearly two weeks
+early. Fixed: `create_invoice_for_lease` now applies the same
+`due_date <= today` gate the scheduler already used. The common case
+(lease starts around now) is unchanged.
+
 ## Related
 
 - Domain index: `vault/payments-accounting/payments-accounting.md`
 - ADR: `0004-recurring-invoicing`
+- Feature: `cash-flow-forecast.md`

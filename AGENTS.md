@@ -4,13 +4,19 @@ You are helping me design and develop a Real Estate Arbitrage Saas platform. I w
 
 ## Repo & Environment:
 
-- **Local canonical app repo (GIT)**: `~/Development/erpnext/apps/real_estate_os`
-  - This is the ONLY directory under git. It is the custom Frappe app.
+### Main Repo - DO NOT COMMIT or PUSH THIS REPO
+
+- **Main canonical repo (GIT)**: `~/Development/erpnext`
+
+### Custom App Repo - ONLY USE THIS REPO
+
+- **Custom app canonical repo (GIT)**: `~/Development/erpnext/apps/real_estate_os`
+  - It is the custom Frappe app.
   - `frappe`/`erpnext` apps and the bench root are upstream/untracked — never commit them.
-- **Bench root (NOT in git)**: `~/Development/erpnext`
+- **Bench root (a different git)**: `~/Development/erpnext`
   - Frappe Bench install: `apps/frappe`, `apps/erpnext`, `sites/`, `env/`, `config/`.
   - Bench root has NO `.git`; do NOT `git init` it.
-- **GitHub remote**: `https://github.com/rafaii/real-estate.git` (new/empty repo)
+- **GitHub remote**: `https://github.com/rafaii/real-estate.git`
 - **Development Environment**: Ubuntu with ERPNext v15 installed at `~/Development/erpnext`
 
 You may change code + project files in the paths above.
@@ -31,7 +37,9 @@ bench-root or site edits are part of the deliverable.
 
 # SYSTEM DESIGN
 
-Refer to `vault/MASTERPLAN.md` to know what we are trying to build.
+Refer to `vault/PLATFORM_STRATEGY.md` for the high-level multi-OS SaaS
+platform plan, and `vault/os/REALESTATE_MASTERPLAN.md` for the Real Estate
+OS's own PRD, to know what we are trying to build.
 
 # REQUIRED GIT WORKFLOW
 
@@ -63,12 +71,10 @@ git worktree add ./wt-<agent-name>-<task-slug> -b agent/<agent-name>/<task-slug>
 
 Default behavior is AUTOMATED isolated merging. However, manual intervention (STOP and ask Imran) is required if:
 
-1. You touch high-risk/shared-critical files (e.g.,  configs, database migration files, `vault/INDEX.md`, `vault/DECISIONS.md`).
+1. You touch high-risk/shared-critical files (e.g., configs, database migration files, `vault/INDEX.md`, `vault/DECISIONS.md`).
 2. Another active coding agent is working on the same feature area.
 3. Your change includes architectural tradeoffs or unclear blast radius
 4. You need to create, approve, supersede, or number an ADR.
-
----
 
 # VAULT (SINGLE SOURCE OF TRUTH)
 
@@ -124,6 +130,22 @@ Whenever you change code:
 1. Update the feature's `<task>.md` in the canonical vault (check off completed items, update `status` frontmatter, bump `updated` date).
 2. Append an entry to `~/Development/erpnext/vault/CHANGELOG.md` using the format:
    `YYYY-MM-DDTHH:MM:SSZ | domain | description | author | branch: agent/<agent-name>/<task-slug>`
+   - **`description` MUST be 1-2 sentences, no exceptions.** State what changed and,
+     if it's a fix, the one-line root cause — nothing else. Every entry needs a
+     description; never leave it blank.
+   - Investigation detail, verification steps, root-cause narratives, and cleanup
+     notes belong in the feature file's Implementation Plan/Acceptance Criteria
+     (§3 above), not in CHANGELOG.md. CHANGELOG.md is a terse index of *when*
+     something happened and *where* to look (which feature file/ADR), not the
+     record of *how* — that record already lives in the feature file.
+   - If you genuinely need to note something not captured elsewhere, add it to
+     the relevant feature file, not by expanding the CHANGELOG line.
+3. If you created a new feature-file implementation plan, or just completed one
+   (checked off its last Implementation Plan item / flipped its `status` to
+   `done`), update `~/Development/erpnext/vault/IMPLEMENTATION-PLAN.md`
+   accordingly in the same session: add a new row for a created plan, or move a
+   completed one down to its "Completed" section. Do not let
+   IMPLEMENTATION-PLAN.md drift out of sync with the feature files it tracks.
 
 ## 5. ADR workflow (DRAFT FIRST)
 
@@ -134,3 +156,38 @@ For non-trivial architectural decisions (e.g., swapping a core workflow engine, 
 3. Only upon approval: assign the next sequential ADR number (e.g. `0001`, `0002`, zero-padded, chronological — never reuse or renumber), move the file to `vault/decisions/000N-<slug>.md` using `_templates/adr-template.md`, delete the draft, and add a row to `DECISIONS.md`.
 4. Once the ADR is approved, create the implementation plan as a feature file in the relevant domain's `features/` folder (e.g., an ADR about provider-abstraction failover creates `vault/provider-abstraction/features/failover-strategy.md`), and link it from the ADR's Implementation section.
 
+# DEPLOYMENT (VPS)
+
+VPS path: `/home/imranrafai/realestate`
+VPS SSH: ssh -i ~/.ssh/id_claude_vps -p 4114 imranrafai@160.238.36.235
+
+## 1 Deployment workflow
+
+Default deployment branch: `main`. Safe isolated work should self-complete end-to-end: commit branch → push branch → merge to `main` → push `main` → SSH to VPS → `git pull origin main` in `apps/real_estate_os` (NOT the outer `/home/imranrafai/realestate` dir — that has no `.git`) → rebuild the custom image → recreate containers → verify.
+
+**CRITICAL: All code changes MUST be made locally, committed, and pushed to GitHub. The VPS pulls from GitHub. Never edit code directly on the VPS — it will be overwritten on next pull.**
+
+**The custom app image is NOT built by `docker compose --build`.** `compose.yaml`'s services reference a fixed, pre-built tag (`${CUSTOM_IMAGE}:${CUSTOM_TAG}` = `realestate-custom:v15.119.3`, no `build:` section) — `--build` is a no-op for it. The actual image build is a separate step:
+```
+cd /home/imranrafai/realestate/apps && git -C real_estate_os pull origin main && docker build -t realestate-custom:v15.119.3 .
+```
+(`apps/Dockerfile` copies `real_estate_os/` in and `pip install -e`s it.) Only after that does `docker compose ... up -d --force-recreate` actually pick up the new code.
+
+**The full compose invocation needs ALL of these `-f` files — omitting any is destructive, not just incomplete:**
+```
+cd /home/imranrafai/realestate && docker compose -p realestate --env-file .env \
+  -f frappe_docker/compose.yaml \
+  -f frappe_docker/overrides/compose.mariadb.yaml \
+  -f frappe_docker/overrides/compose.redis.yaml \
+  -f realestate-override.yml \
+  up -d
+```
+- Project name **must** be `-p realestate` — without it, compose defaults to a project name derived from the directory (`frappe_docker`, since that's the first `-f` file's dir), which creates a second, parallel set of containers instead of reconciling the existing `realestate-*` ones.
+- `compose.mariadb.yaml` and `compose.redis.yaml` are NOT optional extras — `db`, `redis-cache`, `redis-queue` are only defined in those override files, not in the base `compose.yaml`. **Confirmed the hard way:** running `up -d --force-recreate --remove-orphans` with only `compose.yaml -f realestate-override.yml` correctly recreated backend/websocket/queue/scheduler/frontend, but silently deleted the running `db-1`/`redis-cache-1`/`redis-queue-1` containers as "orphans" (they weren't part of that reduced config). Data survived only because they're named volumes (`realestate_db-data`, `realestate_redis-queue-data`) — recreating the containers against the same volume names via the full `-f` list restored everything with no data loss, but this was recoverable by luck, not by design. **Never pass `--remove-orphans` unless every override file that defines a still-needed service is included in the same command.**
+- After recreating `redis-queue`/`redis-cache`, containers that were already running (`queue-short`, `queue-long`, etc.) can end up in a DNS-resolution crash loop (`EAI_AGAIN redis-queue`) if they started before the redis containers finished attaching to the network — `docker restart <name>` on the stuck ones clears it.
+
+**If the change touches `hooks.py`: rebuilding the image and recreating containers is NOT enough.** Frappe caches resolved hooks in Redis per site, independent of the code on disk — a stale `permission_query_conditions`/`has_permission`/etc. entry (or a missing new one) keeps applying until you also run `bench --site <site> clear-cache`. Confirmed the hard way: a permission-hook fix appeared deployed (image rebuilt, containers recreated, site healthy) but the exploit it was meant to close still worked until the cache was cleared.
+
+## 2 Docker Container Setup
+
+docker-compose.yml (on your VPS)

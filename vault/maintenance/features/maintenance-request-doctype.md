@@ -1,9 +1,9 @@
 ---
-status: planned
+status: done
 owner: developer-1
 domain: maintenance
 created: 2026-08-16
-updated: 2026-08-16
+updated: 2026-08-20
 related_adr: []
 ---
 
@@ -33,16 +33,16 @@ in-progress → resolved → closed, with spares, labor, and cost tracking.
 
 ## Implementation Plan
 
-- [ ] Create Maintenance Request DocType + child table + fields
-- [ ] Auto-fill unit from active lease
-- [ ] `total_cost` auto-calc from spares + labor
-- [ ] Status workflow + completion email + feedback
+- [x] Create Maintenance Request DocType + child table + fields
+- [x] Auto-fill unit from active lease
+- [x] `total_cost` auto-calc from spares + labor
+- [x] Status workflow + completion email + feedback
 
 ## Acceptance Criteria
 
-- [ ] Request auto-fills unit from lease
-- [ ] total_cost computes correctly
-- [ ] Resolve → completion email sent
+- [x] Request auto-fills unit from lease
+- [x] total_cost computes correctly
+- [x] Resolve → completion email sent
 
 ## Related
 

@@ -1,8 +1,13 @@
 # Handoff / Current State
 
-Compact resume point. Read this instead of the full history. Last updated 2026-08-17.
+Compact resume point. Read this instead of the full history. Last updated 2026-08-24.
 
-## What exists (as of `main` @ `d1545a0`)
+**Read `vault/findings/2026-08-24-ideal-product-vs-current-state.md` first** —
+code-verified gap analysis (9 capability pillars, 16-item ranked gap
+register, 4 structural risks) that this handoff's "Not built yet" and "Next
+steps" sections now track.
+
+## What exists (as of `main` @ `d1545a0`, plus everything below)
 
 Custom Frappe app `real_estate_os` (repo `https://github.com/rafaii/real-estate.git`),
 installed + working on site `erpnext.local` (Frappe/ERPNext v15).
@@ -22,9 +27,31 @@ installed + working on site `erpnext.local` (Frappe/ERPNext v15).
 - Workspaces: `Real Estate` + `E-Sign` modules visible in Desk sidebar.
 - Emails (invite, counter-sign invite, OTP) sent immediately (`now=True`), not queued.
 
-**5 ADRs approved:** 0001 app-repo-structure, 0002 esign (in-built default + provider abstraction), 0003 multi-tenancy (tenant-per-site), 0004 recurring-invoicing (Payment Schedule + scheduler), 0005 counter-signature + PDC-driven invoicing.
+**10 ADRs approved:** 0001 app-repo-structure, 0002 esign (in-built default +
+provider abstraction), 0003 multi-tenancy (tenant-per-site), 0004
+recurring-invoicing, 0005 counter-signature + PDC-driven invoicing, 0006
+admin-portal approach (headless-hybrid SPA), 0007 admin portal React
+frontend, 0008 tenant provisioning control-plane, 0009 renter self-service
+portal, 0010 PDC schedule generation & bank reconciliation.
 
-**Not built yet:** Building→Cost Center auto-create hook (Phase 3), SMS OTP (email only), provider abstraction (DocuSign/ZohoSign), PDC deposit/bounce scheduler (`process_due_pdc`), maintenance, portals, occupancy dashboard, RBAC.
+**2 ADR drafts pending Imran's approval** (`vault/decisions/drafts/`):
+`draft-adr-head-lease-landlord-payables.md`,
+`draft-adr-lease-lifecycle-state.md`.
+
+Since 2026-08-17: **maintenance module, tenant/maintenance portals, and PDC
+scheduling all shipped** — this section previously listed them as "not
+built yet"; that was stale, not current. See `IMPLEMENTATION-PLAN.md` for
+the authoritative per-feature status table.
+
+**Genuinely not built yet** (per the 2026-08-24 findings doc): the entire
+landlord/cost side of the business — `Head Lease` DocType, landlord
+payables (zero `Purchase Invoice` references anywhere in the codebase),
+Building→Cost Center hook (still commented out in `hooks.py`), margin/P&L
+per building. Also: lease has no `lease_status` field (dashboard proxies
+active-lease via `esign_status == "Signed"`, which never expires); zero
+report definitions exist app-wide; RBAC is 2 roles (System Manager, Tenant)
+vs. the 4-5 in MASTERPLAN; SMS OTP (email only); provider abstraction
+(DocuSign/ZohoSign); tenant-provisioning console (ADR-0008, planned).
 
 ## Environment
 
@@ -64,16 +91,34 @@ installed + working on site `erpnext.local` (Frappe/ERPNext v15).
 
 ## Next steps (pick one)
 
-1. **Finish signatory flow on ESD-21124** — open the signatory link, OTP + consent + sign, verify finalize (certificate audit table, unit → Occupied, first invoice).
-2. **Building.after_insert → Cost Center** (pull Phase 3 forward).
-3. **Provider abstraction** — `Signature Settings` singleton exists; wire DocuSign/ZohoSign modes (ADR-0002).
-4. **SMS OTP** — add SMS gateway to the OTP flow (email-only today).
-5. **PDC deposit/bounce** — `process_due_pdc` scheduler: due PDC → Payment Entry → Deposited; bounce handling (ADR-0005 groundwork done).
+1. **Get the two pending ADR drafts approved** — `draft-adr-head-lease-
+   landlord-payables.md` and `draft-adr-lease-lifecycle-state.md`. Nothing
+   in Wave 2 below can start until these are numbered.
+2. **Wave 1 (in progress as of 2026-08-24, no ADR needed):**
+   portal-source-consolidation (move `ui/` React source into the app repo,
+   drop the dead Vue `portal/`), cost-center-per-building (hook + invoice
+   line-item wiring + backfill).
+3. **Wave 2 (blocked on ADR approval):** `head-lease-doctype.md`,
+   `landlord-payables.md`, `lease-lifecycle-state.md` — the cost side of
+   the business; see the findings doc §6 for why this is the priority.
+4. **Wave 3:** `building-profitability-report.md`,
+   `rent-roll-and-arrears-report.md`, `cash-flow-forecast.md`,
+   `role-based-access.md` (2 roles → 4-5).
+5. Longer-tail: SMS OTP, provider abstraction (DocuSign/ZohoSign),
+   tenant-provisioning console.
 
 ## Vault map
 
-- [`INDEX.md`](INDEX.md) — domains + roadmap
-- [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — phase/feature status
-- [`DECISIONS.md`](DECISIONS.md) — ADRs 0001-0005
+- [`INDEX.md`](INDEX.md) — domains + live task list
+- [`IMPLEMENTATION-PLAN.md`](IMPLEMENTATION-PLAN.md) — live, prioritized feature list
+- [`DECISIONS.md`](DECISIONS.md) — ADRs (see file for current count — this
+  line itself is a known example of the kind of staleness this whole
+  section suffers from; don't trust a specific number here)
 - [`CHANGELOG.md`](CHANGELOG.md) — append-only log
-- [`MASTERPLAN.md`](MASTERPLAN.md) — PRD (source of truth)
+- [`PLATFORM_STRATEGY.md`](PLATFORM_STRATEGY.md) — platform-wide PRD (2026-08-27: replaces `MASTERPLAN.md`)
+- [`os/REALESTATE_MASTERPLAN.md`](os/REALESTATE_MASTERPLAN.md) — Real Estate OS's own PRD
+
+Note: this whole `HANDOFF.md` file is known-stale beyond the links above
+(flagged as gap R2 in `vault/findings/2026-08-24-ideal-product-vs-current-state.md`)
+— treat its narrative sections below with caution; only the links section
+was corrected as part of today's `MASTERPLAN.md` split.
