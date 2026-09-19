@@ -1,3 +1,15 @@
 [submodule "apps/real_estate_os"]
 	path = apps/real_estate_os
 	url = https://github.com/rafaii/real-estate.git
+[submodule "apps/accounts_portal"]
+	path = apps/accounts_portal
+	url = https://github.com/rafaii/accounts-portal.git
+[submodule "apps/email_system"]
+	path = apps/email_system
+	url = https://github.com/rafaii/email-system.git
+[submodule "apps/inbuilt_esign"]
+	path = apps/inbuilt_esign
+	url = https://github.com/rafaii/inbuilt-esign.git
+[submodule "apps/platform_console"]
+	path = apps/platform_console
+	url = https://github.com/rafaii/platform-console.git

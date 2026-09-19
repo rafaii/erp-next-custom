@@ -8,12 +8,6 @@ logs/
 patches.txt
 Procfile
 
-# ── Custom apps with their own separate GitHub repos ──────────────────
-apps/accounts_portal/
-apps/email_system/
-apps/inbuilt_esign/
-apps/platform_console/
-
 # ── Local debug/reference artifacts (not vault docs, not app code) ────
 ui-screenshot/
 
